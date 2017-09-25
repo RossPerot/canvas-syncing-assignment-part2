@@ -2,12 +2,69 @@
 <html lang="en">
 <head>
     <script src="https://npmcdn.com/babel-core@5.8.38/browser.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script type="text/babel" >
         "use strict";
     
+        let draws = {};
+        let canvas;
+        let ctx;
+
+        let socket;
+        let time;
+
+
+        const draw = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            let keys = Object.keys(draws);
+            
+            for(let i = 0; i < keys.length; i++)
+            {
+                const drawCall = draws[ keys[i] ];
+                console.log(drawCall);
+                ctx.fillRect(drawCall.x, drawCall.y, drawCall.width, drawCall.height);
+            }
+        }
+        
+        const setCalls = () =>{
+            time = new Date().getTime();
+            draws[time] = {x:100, y:100, width:100, height:100};
+            
+            time = new Date().getTime();
+            let coords = {x:(Math.floor((Math.random() * 400)) + 1), y:(Math.floor((Math.random() * 400)) + 1), width:100, height:100};
+            
+            socket.emit('draw', {time: time, coords: coords});
+        }
+        
+        const handleMessage = (data) => {
+            draws = data;
+            console.log(data);
+            draw();
+        }
+        
+        const init = () =>{
+            canvas = document.querySelector("#canvas");
+            ctx = canvas.getContext("2d");
+            
+            socket = io.connect();
+            
+            socket.on('connect', () =>{
+               setCalls(); 
+            });
+            
+            socket.on('drawObjects', handleMessage);
+        }
+        const deleteDraw = () => {
+            
+            socket.emit('delete', time);
+        }
+
+        window.onload = init;
+        window.onunload = deleteDraw;
     </script>
 </head>
 <body>
-
+    <canvas id="canvas" height="500" width="500">Please use an HTML 5 browser</canvas>
 </body>
 </html>
